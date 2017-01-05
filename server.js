@@ -9,9 +9,9 @@ var url = "mongodb://history:history@ds155718.mlab.com:55718/history";
 
 app.get('/api/imagesearch/:query', function(request, response) {
     var query = request.params.query;
-    var url = 'https://www.googleapis.com/customsearch/v1?q=' + query + '&searchType=image&cx=016394767303026535170:tiofy6wflbk&key=AIzaSyDEKgzuEk7zh0a6nsRYtJ1EEDQn3KwHT3g';
+    var urll = 'https://www.googleapis.com/customsearch/v1?q=' + query + '&searchType=image&cx=016394767303026535170:tiofy6wflbk&key=AIzaSyDEKgzuEk7zh0a6nsRYtJ1EEDQn3KwHT3g';
     var size = request.query.offset;
-    req(url, function(error, res, body) {
+    req(urll, function(error, res, body) {
         if (!error && response.statusCode == 200) {
             var date = new Date(Date.now());
             date.setTime(date.getTime() - (date.getTimezoneOffset() * 60000));
