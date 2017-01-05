@@ -1,7 +1,11 @@
 var express = require("express");
 var req = require("request");
+var mongodb = require('mongodb');
 
 var app = express();
+
+var MongoClient = mongodb.MongoClient;
+var url = "mongodb://history:history@ds155718.mlab.com:55718/history";
 
 app.get('/api/imagesearch/:query', function(request, response) {
     var query = request.params.query;
@@ -9,7 +13,14 @@ app.get('/api/imagesearch/:query', function(request, response) {
     var size = request.query.offset;
     req(url, function(error, res, body) {
         if (!error && response.statusCode == 200) {
-            var history = {term : query, when : Date.now()};
+            var date = new Date(Date.now());
+            date.setTime(date.getTime() - (date.getTimezoneOffset() * 60000));
+            var output = date.toISOString().substring(0, date.toISOString().length - 1) + ((date.getTimezoneOffset() / 60) < 0 ? "-" : "+") + ((Math.abs(date.getTimezoneOffset() / 60) < 10) ? ("0" + Math.abs(date.getTimezoneOffset() / 60)) : test) + "00";
+            var history = {
+                "term": query,
+                "when": output
+            };
+            save(history);
             var bod = JSON.parse(body);
             var list = makeList(bod);
             response.send(list);
@@ -18,6 +29,26 @@ app.get('/api/imagesearch/:query', function(request, response) {
             response.send(error);
         }
     })
+
+});
+
+
+app.get('/api/latest/imagesearch', function(request, response) {
+    MongoClient.connect(url, function(err, db) {
+        if (err) throw err;
+        var collection = db.collection("history");
+        collection.find({}, {
+            _id: 0,
+            when: 1,
+            term: 1
+        }).sort({
+            when: 1
+        }).limit(10).toArray(function(err, result) {
+            if (err) console.log(err);
+            response.send(result);
+        })
+        db.close();
+    });
 
 });
 
@@ -32,6 +63,18 @@ function makeList(body) {
         list.push(obj);
     }
     return list;
+}
+
+function save(history) {
+    MongoClient.connect(url, function(err, db) {
+        if (err) throw err;
+        var collection = db.collection('history');
+        collection.insert({
+            term: history.term,
+            when: history.when
+        });
+        db.close();
+    })
 }
 
 app.listen(process.env.PORT || 5000);
